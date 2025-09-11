@@ -199,14 +199,14 @@ module Node
         break
       end
     end
-        
+
     return node
   end
 
   def next_sibling?(clazz=Node)
     not next_sibling(clazz).nil?
   end
-  
+
   def each(clazz=Node, &block)
     children.each do |child|
       yield child if child.is_a? clazz 
@@ -240,7 +240,7 @@ class Label
     end
     return n
   end
-    
+
   def to_s
     @name
   end
@@ -288,7 +288,7 @@ class Line
   @@number = -1
 
   attr_reader :number, :text
-  
+
   def initialize(text, source=0, file="stdin") #FIXME: add source file?
     @text = text
     @file = file
@@ -301,16 +301,16 @@ class Line
     super(node)
     @number = @@number+=1
   end
-  
+
   def parse
     @text.unescape!
-    
+
     until @text.empty?
 
       if (match = /^["](?<string>[^"]+)["]/.match(@text))
         self << Literal.new(match["string"])
         @text = match.post_match.strip
-        
+
       elsif (match = /^(?<code>then\s*(go(sub|to))|then|go(sub|to))\s*(?<labels>[\w\s,.]+)+/
                      .match(@text))
 
@@ -319,7 +319,7 @@ class Line
 
         labels.each do |l|
           l.strip!
-          if l.keyword?            
+          if l.keyword?
             self << Code.new(l)
             next
           end
@@ -331,7 +331,7 @@ class Line
       elsif (match = /^(?<separator>:+)/.match(@text))
         self << Code.new(":")
         @text = match.post_match.strip
-        
+      
       elsif (match = /^(?<code>[^":]+?(?!then|go(to|sub)))/.match(@text))
         break if match["code"] =~ /\s*rem\s*/
 
@@ -347,10 +347,10 @@ class Line
 
     children.pop if last == ":"
   end
-  
+
   def to_s
     s = "%d " % [number]
-    
+
     children.each do |child|
       if child.is_a? Reference
         begin
@@ -372,7 +372,7 @@ class Scope
   include Node
 
   attr_reader :name
-  
+
   def initialize(name=nil)
     @name = name.to_s
   end
@@ -388,12 +388,12 @@ class Scope
   def path
     n = name
     p = parent
-    
+
     until(p.root?)
       n = "%s.%s" % [p.name, n]
       p = p.parent
     end
-    
+
     return n
   end
 
@@ -401,7 +401,7 @@ class Scope
 
     children.each do |label|
       next unless label.is_a? Label
-      
+
       if label.name == reference.name || label.path(parent) == reference.name
 
         if label.next_sibling?(Line)
@@ -417,7 +417,7 @@ class Scope
     each(Scope) do |scope|
       scope.each(Label) do |label|
         if label.path(self) == reference.name || label.path(parent) == reference.name
-          
+
           if label.next_sibling?(Line)
             return label.next_sibling(Line).number
           else
@@ -452,7 +452,7 @@ class Parser
     if not pathname.exist?
       error(source, "include: no such file or directory: '%s'" % [pathname])
     end
-    
+
     if type == "source"
       include_source(pathname)
 
@@ -463,7 +463,7 @@ class Parser
       error(source, "include: unknown type: '%s'" % [type])
     end
   end
-  
+
   def include_source(pathname)
     Parser.new(pathname.open('r'), pathname, @scope).parse
   end
@@ -480,7 +480,7 @@ class Parser
         @scope << Line.new(line.chop) unless line.empty?
         line = "data "
       end
-      
+
       i+=1
     end
     @scope << Line.new(line.chop) unless line == "data "
@@ -493,11 +493,11 @@ class Parser
       line.chomp!
       line.strip!
       line.escape!
-      
+
       next if line.empty?
       next if line =~ /^rem/
       next if line =~ /^;/
-      
+
       if line =~ /^!include\s+(.+?)\s+"(.+?)"/
         match = $&
         include($1, $2, source)          
@@ -514,7 +514,7 @@ class Parser
         @scope << label
         line.sub!(/^([a-zA-Z_]\w+):/, '')
         redo
-        
+
       elsif line =~ /^{/
         @scope = @scope << Scope.new(@scope.children.last)
         line.sub!(/^{/, '')
@@ -524,7 +524,7 @@ class Parser
         @scope << Line.new($1, source, @file)
         line.sub!($1, '')
         redo
-        
+
       elsif line =~ /}$/
         @scope = @scope.parent
         line.sub!(/}$/, '')
@@ -542,7 +542,7 @@ class Preprocessor
     @input = input
     @output = output
   end
-  
+
   def process()
     @tree = Parser.new(@input, "stdin", Scope.new("global")).parse
   end
@@ -555,7 +555,7 @@ class Preprocessor
       end
     end
   end
-       
+
   def put()
     @tree.each(Line) { |line| puts line }
   end
@@ -578,6 +578,3 @@ if options.has_key? :line
 else
   pp.put
 end
-
-
-		
