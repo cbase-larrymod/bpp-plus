@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Empty quoted strings (`""`) in `.bpp` files were not recognized correctly.
 - `IF ... THEN` statements without `GOTO`/`GOSUB` were incorrectly parsed as jump commands.
 - Parser correctly recognizes `::` as a separator instead of misinterpreting colons as part of code tokens.
+- Corrected color keyword spelling from **GREY** to **GRAY** to match Commodore BASIC v2 conventions (e.g., `GRAY1`, `GRAY2`, `GRAY3`).
+- `GOSUB`/`GOTO` regex corrected: removed the trailing `+` from `[\w\s,.]+` to avoid capturing multiple label groups incorrectly.
+  - **Before:** `^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)+`
+  - **After:**  `^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)`
+
+### Changed
+- BASIC line numbering now **starts at 1** instead of the previous 0.
 
 ### Removed
 - Unwanted spaces in code

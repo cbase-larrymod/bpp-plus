@@ -93,23 +93,23 @@ class String
     "lblu", "gry3", "pur", "left", "yel", "cyn", "orange", "F1", "F3",
     "F5", "F7", "F2", "F4", "F6", "F8", "shift\\ return", "upper\\
     case", "BLK", "UP", "RVS\\ OFF", "CLR", "insert", "BROWN",
-    "LT\\.RED", "GREY1", "GREY2", "lt\\ green", "LT\\.BLUE", "GREY3",
+    "LT\\.RED", "GRAY1", "GRAY2", "lt\\ green", "LT\\.BLUE", "GRAY3",
     "PUR", "LEFT", "YEL", "cyn", "orange", "f1", "f3", "r5", "f7",
     "f2", "f4", "f6", "f8", "black", "up", "reverse\\ off", "clear",
     "brown", "pink", "dark\\ gray", "gray", "light\\ green", "light\\
     blue", "light\\ gray", "purple", "left", "yellow", "cyan",
     "ORANGE", "F1", "F3", "F5", "F7", "F2", "F4", "F6", "F8", "BLACK",
-    "UP", "RVSOFF", "CLR", "INST", "BROWN", "LIG\\.RED", "GREY\\ 1",
+    "UP", "RVSOFF", "CLR", "INST", "BROWN", "LIG\\.RED", "GRAY\\ 1",
     "GREY\\ 2", "LIG\\.GREEN", "LIG\\.BLUE", "GREY\\ 3", "PURPLE",
     "LEFT", "YELLOW", "CYAN"]
 
   def self.controls(open, close)
     /#{Regexp.quote(open)}((\d+\s+)?(#{@@controls.join('|')}))#{Regexp.quote(close)}/i
-    end
+  end
 
   @@unescaped = self.controls('{', '}')
   @@escaped = self.controls('~', '~')
-  
+
   def label?
     not keyword?
   end
@@ -117,7 +117,7 @@ class String
   def keyword?
     @@keywords.include?(self)
   end
-  
+
   def escape!
     gsub! @@unescaped, "~\\1~"
   end
@@ -166,7 +166,7 @@ module Node
     child = [child].flatten
 
     @children += child
-    child.each { |c| c.parent = self }    
+    child.each { |c| c.parent = self }
   end
 
   def removeChild(child)
@@ -185,9 +185,9 @@ module Node
   def next_sibling(clazz=Node)
     node = nil
 
-    after = false    
+    after = false
     return node if root?
-    
+
     parent.each do |sibling|
       if sibling == self
         after = true
@@ -209,7 +209,7 @@ module Node
 
   def each(clazz=Node, &block)
     children.each do |child|
-      yield child if child.is_a? clazz 
+      yield child if child.is_a? clazz
       child.each do |grandchild|
         yield grandchild if grandchild.is_a? clazz
       end
@@ -233,10 +233,10 @@ class Label
 
     p = parent
     n = name
-    
+
     until p.nil? || p == scope
       n = "%s.%s" % [p.name, n]
-      p = p.parent      
+      p = p.parent
     end
     return n
   end
@@ -272,7 +272,7 @@ class Reference
   include Node
 
   attr_reader :name
-  
+
   def initialize(name)
     @name = name
   end
@@ -284,12 +284,12 @@ class Line
   include Node
 
   attr_accessor :source, :file
-  
-  @@number = -1
+
+  @@number = 0    # change: basic lines start at 1 instead of 0
 
   attr_reader :number, :text
 
-  def initialize(text, source=0, file="stdin")    #fixme: add source file?
+  def initialize(text, source=0, file="stdin")    # fixme: add source file?
     @text = text
     @file = file
     @source = source
@@ -311,6 +311,7 @@ class Line
         self << Literal.new(match["string"])
         @text = match.post_match.strip
 
+      # elsif (match = /^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)+/    (Original Larry bugfix version)
       elsif (match = /^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)/    # bugfix: prevent bare THEN in IF...THEN from being misparsed
         .match(@text))
 
@@ -328,11 +329,11 @@ class Line
         end
         @text = match.post_match.strip
 
-      elsif (match = /^(?<separator>:+)/.match(@text))
+      elsif (match = /^(?<separator>:)/.match(@text))    # bugfix: problem with ::
         self << Code.new(":")
         @text = match.post_match.strip
-      
-      elsif (match = /^(?<separator>:)/.match(@text))    # bugfix: problem with ::
+
+      elsif (match = /^(?<code>[^":]+?(?!then|go(to|sub)))/.match(@text))
         break if match["code"] =~ /\s*rem\s*/
 
         self << Code.new(match["code"])
@@ -429,7 +430,7 @@ class Scope
       end
     end
 
-    return parent.resolve(reference)          
+    return parent.resolve(reference)
   end
 
   def to_s
@@ -485,7 +486,7 @@ class Parser
     end
     @scope << Line.new(line.chop) unless line == "data "
     input.close
-  end    
+  end
 
   def parse
     @io.each_line_with_number do |line, source|
@@ -500,7 +501,7 @@ class Parser
 
       if line =~ /^!include\s+(.+?)\s+"(.+?)"/
         match = $&
-        include($1, $2, source)          
+        include($1, $2, source)
         line.sub!(match, '')
         redo
 
@@ -528,8 +529,8 @@ class Parser
       elsif line =~ /}$/
         @scope = @scope.parent
         line.sub!(/}$/, '')
-        redo        
-      end      
+        redo
+      end
     end
 
     @io.close
