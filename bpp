@@ -17,10 +17,10 @@ class String
 
   @@keywords = "end for next data input# input dim read let goto run if
                 restore gosub return rem stop on wait load save verify def
-                poke print# print cont list clr cmd sys open close get new
+                poke print# print cont list clr cmd sys open close get get# new
                 tab( to fn spc( then not step + - * / ^ and or > = < sgn
                 int abs usr fre pos sqr rnd log exp cos sin tan atn peek
-                len str$ val asc chr$ left$ right$ mid$ go ~".split(/\s+/)
+                len str$ val asc chr$ left$ right$ mid$ ti$ ti st go ~".split(/\s+/)
 
   @@controls = ["\\$00", "\\$01", "\\$02", "\\$03", "\\$04",
     "\\$05", "\\$06", "\\$07", "\\$08", "\\$09", "\\$0a", "\\$0b",
@@ -289,7 +289,7 @@ class Line
 
   attr_reader :number, :text
 
-  def initialize(text, source=0, file="stdin") #FIXME: add source file?
+  def initialize(text, source=0, file="stdin")    #fixme: add source file?
     @text = text
     @file = file
     @source = source
@@ -307,12 +307,12 @@ class Line
 
     until @text.empty?
 
-      if (match = /^["](?<string>[^"]+)["]/.match(@text))
+      if (match = /^["](?<string>[^"]*)["]/.match(@text))    # bugfix: allow empty quoted strings
         self << Literal.new(match["string"])
         @text = match.post_match.strip
 
-      elsif (match = /^(?<code>then\s*(go(sub|to))|then|go(sub|to))\s*(?<labels>[\w\s,.]+)+/
-                     .match(@text))
+      elsif (match = /^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)/    # bugfix: prevent bare THEN in IF...THEN from being misparsed
+        .match(@text))
 
         self << Code.new(match["code"])
         labels = match["labels"].split(/\s*,/)
@@ -332,7 +332,7 @@ class Line
         self << Code.new(":")
         @text = match.post_match.strip
       
-      elsif (match = /^(?<code>[^":]+?(?!then|go(to|sub)))/.match(@text))
+      elsif (match = /^(?<separator>:)/.match(@text))    # bugfix: problem with ::
         break if match["code"] =~ /\s*rem\s*/
 
         self << Code.new(match["code"])
