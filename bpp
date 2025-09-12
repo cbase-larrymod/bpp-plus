@@ -4,14 +4,14 @@
 require 'pathname'
 require 'optparse'
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 def error(line, message)
   STDERR.puts "error: line %d: %s" % [line, message]
   exit 1
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class String
 
@@ -114,7 +114,7 @@ class String
   @@escaped = self.controls('~', '~')
 
   def label?
-    not keyword?
+    self =~ /^[a-zA-Z_][\w-]*$/ && !keyword?
   end
 
   def keyword?
@@ -130,7 +130,7 @@ class String
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class IO
   def each_line_with_number(&block)
@@ -141,7 +141,7 @@ class IO
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 module Node
   include Enumerable
@@ -220,7 +220,7 @@ module Node
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class Label
   include Node
@@ -233,7 +233,6 @@ class Label
   end
 
   def path(scope=parent)
-
     p = parent
     n = name
 
@@ -249,7 +248,7 @@ class Label
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class Code < String
   include Node
@@ -259,7 +258,7 @@ class Code < String
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class Literal < String
   include Node
@@ -269,7 +268,7 @@ class Literal < String
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class Reference
   include Node
@@ -281,7 +280,7 @@ class Reference
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class Line
   include Node
@@ -370,7 +369,7 @@ class Line
   end
 end
 
-#----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 class Scope 
   include Node
@@ -411,9 +410,7 @@ class Scope
         if label.next_sibling?(Line)
           return label.next_sibling(Line).number
         else
-          error(label.source,
-                "referenced label '%s' not followed by basic code" %
-                [label])
+          error(label.source, "referenced label '%s' not followed by basic code" % [label])
         end
       end
     end
@@ -425,9 +422,7 @@ class Scope
           if label.next_sibling?(Line)
             return label.next_sibling(Line).number
           else
-            error(label.source,
-                  "referenced label '%s' not followed by basic code" %
-                  [label])
+            error(label.source, "referenced label '%s' not followed by basic code" % [label])
           end
         end
       end
@@ -442,34 +437,64 @@ class Scope
   end
 end
 
-class Parser
+# ---------------------------------------------------------------------------------------------
 
-  def initialize(io=STDIN, file="stdin", scope=Scope.new)
+class Parser
+  def self.parse_file(path, scope = Scope.new)
+    pathname = Pathname.new(path).expand_path
+    File.open(pathname, "r") do |io|
+      Parser.new(io, pathname, scope).parse
+    end
+  end
+
+  def initialize(io = STDIN, file = Pathname.new("stdin"), scope = Scope.new)
     @io = io
-    @file = file
+    @file = Pathname.new(file).expand_path
     @scope = scope
   end
 
+  # Include method
   def include(type, path, source)
     pathname = Pathname.new(path)
 
-    if not pathname.exist?
-      error(source, "include: no such file or directory: '%s'" % [pathname])
+    tried_paths = []
+
+    if !pathname.absolute?
+      if @file && @file.to_s != "stdin"
+        # Relative to including file
+        pathname = @file.dirname.join(path)
+        tried_paths << pathname.expand_path.to_s
+      end
+
+      # Also try current working directory
+      pathname_cwd = Pathname.pwd.join(path)
+      tried_paths << pathname_cwd.expand_path.to_s unless tried_paths.include?(pathname_cwd.expand_path.to_s)
+
+      if pathname.exist?
+        pathname = pathname.expand_path
+      elsif pathname_cwd.exist?
+        pathname = pathname_cwd.expand_path
+      else
+        error(source, "include: no such file or directory: '#{path}'\n  tried:\n  - #{tried_paths.join("\n  - ")}")
+      end
     end
 
-    if type == "source"
+    pathname = pathname.expand_path unless pathname.exist?
+      
+    case type
+    when "source"
       include_source(pathname)
 
-    elsif type == "data"
+    when "data"
       include_data(pathname)
 
     else
-      error(source, "include: unknown type: '%s'" % [type])
+      error(source, "include: unknown type: '#{type}'")
     end
   end
 
   def include_source(pathname)
-    Parser.new(pathname.open('r'), pathname, @scope).parse
+    Parser.parse_file(pathname, @scope)
   end
 
   def include_data(pathname)
@@ -480,12 +505,12 @@ class Parser
     input.each_byte do |byte|
       line += "%d," % [byte]
 
-      if i > 0 && i%16 == 0
+      if i > 0 && i % 16 == 0
         @scope << Line.new(line.chop) unless line.empty?
         line = "data "
       end
 
-      i+=1
+      i += 1
     end
     @scope << Line.new(line.chop) unless line == "data "
     input.close
@@ -493,7 +518,6 @@ class Parser
 
   def parse
     @io.each_line_with_number do |line, source|
-
       line.chomp!
       line.strip!
       line.escape!
@@ -507,16 +531,15 @@ class Parser
         include($1, $2, source)
         line.sub!(match, '')
         redo
-
-      elsif line =~ /^([a-zA-Z_]\w+):/ && $1.label?
+      elsif line =~ /^([a-zA-Z_][\w-]*):/ && $1.label?
         label = Label.new($1, source)
 
-        if @scope.defined? label
-          error(source, "label '%s' already defined in %s" % [label, @scope]);
+        if @scope.defined?(label)
+          error(source, "label '%s' already defined in %s" % [label, @scope])
         end
 
         @scope << label
-        line.sub!(/^([a-zA-Z_]\w+):/, '')
+        line.sub!(/^([a-zA-Z_][\w-]*):/, "")
         redo
 
       elsif line =~ /^{/
@@ -541,14 +564,21 @@ class Parser
   end
 end
 
+# ---------------------------------------------------------------------------------------------
+
 class Preprocessor
-  def initialize(input=STDIN, output=STDOUT)
+  def initialize(input=STDIN, filename="stdin", output=STDOUT)
     @input = input
+    @filename = filename
     @output = output
   end
 
   def process()
-    @tree = Parser.new(@input, "stdin", Scope.new("global")).parse
+    if @filename == "stdin"
+      @tree = Parser.new(@input, @filename, Scope.new("global")).parse
+    else
+      @tree = Parser.parse_file(@filename, Scope.new("global"))
+    end
   end
 
   def lookup(num)
@@ -565,16 +595,25 @@ class Preprocessor
   end
 end
 
+# --- Main entrypoint -------------------------------------------------------------------------
+
 options = {}
 OptionParser.new do |opts|
-  opts.banner = "Usage: bpp [options]"
+  opts.banner = "Usage: bpp [options] file.bpp"
 
   opts.on("-lLINE", "--line=LINE", "Lookup line") do |l|
     options[:line] = l
   end
 end.parse!
 
-pp = Preprocessor.new
+filename = ARGV.shift
+
+if filename
+  pp = Preprocessor.new(nil, filename)
+else
+  pp = Preprocessor.new
+end
+
 pp.process
 
 if options.has_key? :line

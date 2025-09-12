@@ -10,13 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Removed
 
-## [1.0.1] - 2025-09-11
+## [1.0.1] - 2025-09-12
 ### Added
 - Bugfixes from [Larry/ROLE](https://github.com/cbmbas) to handle Commodore BASIC v2 and C\*BASE extensions
 - CHANGELOG.md
 - `@@buildControls` for handling build date stamping in Larry C*Base.
   - **Development (default):** outputs `Dev: YYYY-MM-DD, HH:MM    Larry Mod v3.1`
   - **Release:** outputs `Release: YYYY-MM-DD       Larry Mod v3.1`
+- Preprocessor now supports **recursive paths** when including source files.  
+  You can include files in the same directory or in a sub-directory using relative paths.
+
+**Examples:**
+  ```basic
+  {!include source "filename.bpp"}                     # include a file in the same directory
+  {!include source "sub-directory/filename.bpp"}       # include a file in a sub-directory
+  {!include source "../sub-directory/filename.bpp"}    # include a file in a sub-directory using parent path
+  ```
 
 ### Fixed
 - Parser now correctly recognizes `GET#` as a valid keyword in addition to `GET`.
@@ -30,6 +39,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **After:**  `^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)`
 
 ### Changed
+- Labels now support **hyphens** and **camelCase** in addition to letters, digits, and underscores.  
+  Labels must start with a letter or underscore and **cannot** be a reserved keyword.
+
+  **Examples:**
+  ```basic
+  label:
+  _label:
+
+  longLabel:
+  _longLabel:
+
+  long-label:
+  _long-label:
+  ```
+
 - BASIC line numbering now **starts at 1** instead of the previous 0.
 
 ### Removed
