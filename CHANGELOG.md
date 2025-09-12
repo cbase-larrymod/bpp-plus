@@ -1,22 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-### Added
-### Changed
-### Fixed
-### Removed
-
 ## [1.0.1] - 2025-09-12
 ### Added
-- Bugfixes from [Larry/ROLE](https://github.com/cbmbas) to handle Commodore BASIC v2 and C\*Base extensions
-- CHANGELOG.md
 - `@@buildControls` for handling build date stamping in Larry C\*Base.
   - **Development (default):** outputs `Dev: YYYY-MM-DD, HH:MM    Larry Mod v3.1`
   - **Release:** outputs `Release: YYYY-MM-DD       Larry Mod v3.1`
+  - Use `{buildstamp}` in your `.bpp` file to insert the current build type, date and time. The time is included for _Development_ builds, but not for _Release_ builds.
+
+  **Examples:**
+  ```basic
+  print "{buildstamp}"
+
+  'Default mode in C*Base Larry Mod v3.1 - Build system'
+  Outputs: Dev: 2025-09-12, 14:35    Larry Mod v3.1
+
+  'Release mode in C*Base Larry Mod v3.1 - Build system'
+  Outputs: Release: 2025-09-12       Larry Mod v3.1
+  ```
 - Preprocessor now supports **recursive paths** when including source files.  
   You can include files in the same directory or in a sub-directory using relative paths.
 
@@ -26,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     {!include source "sub-directory/filename.bpp"}       # include a file in a sub-directory
     {!include source "../sub-directory/filename.bpp"}    # include a file in a sub-directory using parent path
     ```
+
+- Bugfixes from [Larry/ROLE](https://github.com/cbmbas) to handle Commodore BASIC v2 and C\*Base extensions
+- CHANGELOG.md
 
 ### Fixed
 - Parser now correctly recognizes `GET#` as a valid keyword in addition to `GET`.
@@ -62,3 +66,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-09-11
 ### Forked
 - From https://github.com/hbekel/bpp
+
+---
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+```
+### [Unreleased]
+### Added
+### Changed
+### Fixed
+### Removed
+```
