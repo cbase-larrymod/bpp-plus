@@ -1,10 +1,11 @@
-## bpp - a basic preprocessor for use with petcat
+# BPP+
+BPP+ is a BASIC v2 (Commodore 64) preprocessor designed for use with Petcat and tailored for the **C*Base Larry Mod v3.1 - Build system**.  
 
-This is a simple symbolic preprocessor for cross-developing CBM BASIC
-programs in a more readable form, removing the need for line numbers
-and using labels, scopes and include directives instead. The output
-can then be converted to a PRG file using the petcat utilitiy that
-comes with VICE.
+This updated version of the original symbolic preprocessor makes CBM BASIC programs easier to write and read. It supports cross-development of CBM BASIC programs by removing the need for line numbers and enabling the use of labels, scopes, and include directives. The preprocessed output can then be converted into a PRG file using the [Petcat](https://vice-emu.sourceforge.io/vice_16.html) utility included with VICE.
+
+The original BPP repository can be found [here](https://github.com/hbekel/bpp).
+
+---
 
 ## Example
 
@@ -235,5 +236,3 @@ Type can be either "source" or "data", where "source" includes the
 contents of the file verbatim into the current file and "data"
 interprets the contents of the file binary data and the creates the
 corresponding basic DATA lines.
-
-
