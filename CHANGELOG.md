@@ -20,12 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preprocessor now supports **recursive paths** when including source files.  
   You can include files in the same directory or in a sub-directory using relative paths.
 
-**Examples:**
-  ```basic
-  {!include source "filename.bpp"}                     # include a file in the same directory
-  {!include source "sub-directory/filename.bpp"}       # include a file in a sub-directory
-  {!include source "../sub-directory/filename.bpp"}    # include a file in a sub-directory using parent path
-  ```
+  **Examples:**
+    ```basic
+    {!include source "filename.bpp"}                     # include a file in the same directory
+    {!include source "sub-directory/filename.bpp"}       # include a file in a sub-directory
+    {!include source "../sub-directory/filename.bpp"}    # include a file in a sub-directory using parent path
+    ```
 
 ### Fixed
 - Parser now correctly recognizes `GET#` as a valid keyword in addition to `GET`.
