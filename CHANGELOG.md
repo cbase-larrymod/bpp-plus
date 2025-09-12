@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2025-09-12
 ### Added
-- Bugfixes from [Larry/ROLE](https://github.com/cbmbas) to handle Commodore BASIC v2 and C\*BASE extensions
+- Bugfixes from [Larry/ROLE](https://github.com/cbmbas) to handle Commodore BASIC v2 and C\*Base extensions
 - CHANGELOG.md
-- `@@buildControls` for handling build date stamping in Larry C*Base.
+- `@@buildControls` for handling build date stamping in Larry C\*Base.
   - **Development (default):** outputs `Dev: YYYY-MM-DD, HH:MM    Larry Mod v3.1`
   - **Release:** outputs `Release: YYYY-MM-DD       Larry Mod v3.1`
 - Preprocessor now supports **recursive paths** when including source files.  
