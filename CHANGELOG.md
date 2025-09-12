@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Bugfixes from [Larry/ROLE](https://github.com/cbmbas) to handle Commodore BASIC v2 and C\*BASE extensions
 - CHANGELOG.md
+- `@@buildControls` for handling build date stamping in Larry C*Base.
+  - **Development (default):** outputs `Dev: YYYY-MM-DD, HH:MM    Larry Mod v3.1`
+  - **Release:** outputs `Release: YYYY-MM-DD       Larry Mod v3.1`
 
 ### Fixed
 - Parser now correctly recognizes `GET#` as a valid keyword in addition to `GET`.

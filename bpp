@@ -103,8 +103,11 @@ class String
     "GREY\\ 2", "LIG\\.GREEN", "LIG\\.BLUE", "GREY\\ 3", "PURPLE",
     "LEFT", "YELLOW", "CYAN"]
 
+  @@buildControls = ["buildstamp"]
+
   def self.controls(open, close)
-    /#{Regexp.quote(open)}((\d+\s+)?(#{@@controls.join('|')}))#{Regexp.quote(close)}/i
+    combinedControls = @@controls + @@buildControls
+    /#{Regexp.quote(open)}((\d+\s+)?(#{combinedControls.join('|')}))#{Regexp.quote(close)}/i
   end
 
   @@unescaped = self.controls('{', '}')
