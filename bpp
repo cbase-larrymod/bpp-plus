@@ -456,10 +456,9 @@ class Parser
   # Include method
   def include(type, path, source)
     pathname = Pathname.new(path)
-
     tried_paths = []
 
-    if !pathname.absolute?
+    unless pathname.absolute?
       if @file && @file.to_s != "stdin"
         # Relative to including file
         pathname = @file.dirname.join(path)
@@ -475,19 +474,20 @@ class Parser
       elsif pathname_cwd.exist?
         pathname = pathname_cwd.expand_path
       else
-        error(source, "include: no such file or directory: '#{path}'\n  tried:\n  - #{tried_paths.join("\n  - ")}")
+        error(
+          source,
+          "include: no such file or directory: '#{path}'\n  tried:\n  - #{tried_paths.join("\n  - ")}"
+        )
       end
     end
 
     pathname = pathname.expand_path unless pathname.exist?
-      
+
     case type
     when "source"
       include_source(pathname)
-
     when "data"
       include_data(pathname)
-
     else
       error(source, "include: unknown type: '#{type}'")
     end
@@ -498,7 +498,7 @@ class Parser
   end
 
   def include_data(pathname)
-    input = pathname.open('rb')
+    input = pathname.open("rb")
     i = 0
     line = "data "
 
@@ -512,15 +512,39 @@ class Parser
 
       i += 1
     end
+
     @scope << Line.new(line.chop) unless line == "data "
     input.close
   end
 
   def parse
+    buffer = ""
+
     @io.each_line_with_number do |line, source|
       line.chomp!
       line.strip!
       line.escape!
+
+      # Support line continuation using backslash (\)
+      #
+      # Lets you split a long BASIC line over several lines in the source.
+      # The preprocessor joins them with ":" (BASIC's statement separator).
+      #
+      # Example:
+      #   poke 53281,0\
+      #   poke 53280,0\
+      #   g$=chr$(13)
+      #
+      # Becomes:
+      #   poke 53281,0:poke 53280,0:g$=chr$(13)
+
+      if line.end_with?("\\")
+        buffer << line.chomp("\\").rstrip + ":"
+        next
+      else
+        line = buffer + line
+        buffer = "" # Reset buffer for next group
+      end
 
       next if line.empty?
       next if line =~ /^rem/
@@ -531,6 +555,7 @@ class Parser
         include($1, $2, source)
         line.sub!(match, '')
         redo
+
       elsif line =~ /^([a-zA-Z_][\w-]*):/ && $1.label?
         label = Label.new($1, source)
 
@@ -539,7 +564,7 @@ class Parser
         end
 
         @scope << label
-        line.sub!(/^([a-zA-Z_][\w-]*):/, "")
+        line.sub!(/^([a-zA-Z_][\w-]*):/, '')
         redo
 
       elsif line =~ /^{/

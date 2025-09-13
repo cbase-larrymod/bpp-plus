@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+
+## [1.0.2] - 2025-09-13
+### Added
+- Support for statement chaining with `\` in `.bpp` files.
+
+**Examples:**
+  ```basic
+  'BPP+'v
+  poke 53281,0\
+  poke 53280,0\
+  print "Hello BPP+";
+
+  'Will outout normal BASIC v2'
+  poke 53281,0:poke 53280,0print "Hello BPP+";
+  ```
+
 ## [1.0.1] - 2025-09-12
 ### Added
 - `@@buildControls` for handling build date stamping in Larry C\*Base.

@@ -87,15 +87,16 @@ theme: poke53280,0: poke53281,0: poke646,5: return
 
 ## Usage
 
-bpp is implemented as a simple filter, reading from stdin and
-producing output on stdout:
+BPP+ is implemented as a simple filter, reading from stdin and producing output on stdout:
 
-    $ bpp < example.bpp
+```bash
+$ bpp < example.bpp
+```
 
 This will redirect the contents of `example.bpp` to stdin and feed it
 to bpp, producing the following output:
 
-<pre>
+```basic
 0 goto3
 1 print"{clr}";:return
 2 poke53280,0:poke53281,0:poke646,5:return
@@ -126,7 +127,7 @@ to bpp, producing the following output:
 27 return
 28 print:print"see ya!":end
 29 fori=0to1024:nexti:return
-</pre>
+```
 
 As you can see, all references to labels have been replaced by the
 actual line number for the respective label and the file `screen.bpp`
@@ -144,14 +145,27 @@ simply use pipes and redirects:
 All lines starting with a semicolon or a Basic REM statement are
 ignored.
 
+## Statement chaining
+
+BPP+ allows you to write multiple readable lines in a `.bpp` file that are combined into a single BASIC statement during pre-processing. Each line ending with `\` will be joined using `:` (the BASIC v2 statement separator). This keeps your code clear while producing compact output.
+
+```basic
+'BPP+ example'
+poke 53281,0\
+poke 53280,0\
+print "Hello BPP+"
+
+'Output after pre-processing
+poke 53281,0:poke 53280,0:print "Hello BPP+"
+```
+
+This allows you to write each instruction on its own line in the source file, but still output efficient, single-line BASIC v2 statements.
+
 ## Labels
 
-Label identifiers may include letters, numbers, and underscores,
-although they have to begin with either a letter or an
-underscore. BASIC keywords can not be used as label identifiers.
+Label identifiers may include letters, numbers, and underscores, although they have to begin with either a letter or an underscore. BASIC keywords can not be used as label identifiers.
 
-Labels can be defined by prefixing code with a label name, followed by
-a colon character:
+Labels can be defined by prefixing code with a label name, followed by a colon character:
 
     label: <code>...
 
@@ -173,19 +187,20 @@ Labels can be referenced by using a label reference instead of a line number
 for `goto` and `gosub` as well as implicit gotos following the `then` part of
 an `if`-statement.
 
+
     goto <label>
     on <var> goto <label>, <label>, <label>...
-    
+
     gosub <label>
     on <var> gosub <label>, <label>, <label>...
-    
+
     if <condition> then <label>
-    
+
 A label reference may be prefixed with a reference to the scope
 containing the label, separated by a dot:
 
     <path-to-scope>.<label>
-    
+
 Where a path to a scope may also include multiple scope references
 separated by dots:
 
