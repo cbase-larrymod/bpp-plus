@@ -150,12 +150,12 @@ ignored.
 BPP+ allows you to write multiple readable lines in a `.bpp` file that are combined into a single BASIC statement during pre-processing. Each line ending with `\` will be joined using `:` (the BASIC v2 statement separator). This keeps your code clear while producing compact output.
 
 ```basic
-'BPP+ example'
+'Input .bpp'
 poke 53281,0\
 poke 53280,0\
 print "Hello BPP+"
 
-'Output after pre-processing
+'Output .bas'
 poke 53281,0:poke 53280,0:print "Hello BPP+"
 ```
 
