@@ -147,7 +147,9 @@ ignored.
 
 ## Statement chaining
 
-BPP+ allows you to write multiple readable lines in a `.bpp` file that are combined into a single BASIC statement during pre-processing. Each line ending with `\` will be joined using `:` (the BASIC v2 statement separator). This keeps your code clear while producing compact output.
+BPP+ lets you write code line by line for better readability in a `.bpp` file. Add `\` at the end of each line to join them, with the normal `:` separator automatically inserted.
+
+This way you can keep each instruction on its own line in the source, while still producing efficient, single-line BASIC v2 statements.
 
 ```basic
 'Input .bpp'
@@ -158,8 +160,6 @@ print "Hello BPP+"
 'Output .bas'
 poke 53281,0:poke 53280,0:print "Hello BPP+"
 ```
-
-This allows you to write each instruction on its own line in the source file, but still output efficient, single-line BASIC v2 statements.
 
 ## Labels
 
