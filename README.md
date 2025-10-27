@@ -647,31 +647,31 @@ rem ** ne              ; No extension listing
 
 ### Directive details
 
-**1. Enable STOP key (`rem ** se` / `!blitz se`)**
+**1. Enable STOP key** (`rem ** se` / `!blitz se`)
 - Allows program to be interrupted with **RUN/STOP** key
 - Useful during development and debugging
 - Default state in interpreted BASIC (re-enabled by this directive)
 
-**2. Disable STOP key (`rem ** sa` / `!blitz sa`)**
+**2. Disable STOP key** (`rem ** sa` / `!blitz sa`)
 - Prevents program interruption with **RUN/STOP** key
 - Recommended for production releases
 - Default state after Blitz! compilation
 
-**3. Enable INPUT command (`rem ** ie` / `!blitz ie`)**
+**3. Enable INPUT command** (`rem ** ie` / `!blitz ie`)
 - Allows runtime `INPUT` statements (if supported by Blitz! version)
 - May increase compiled program size
 
-**4. Disable INPUT command (`rem ** ia` / `!blitz ia`)**
+**4. Disable INPUT command** (`rem ** ia` / `!blitz ia`)
 - Removes `INPUT` command support from compiled program
 - Reduces compiled program size
 - Default state (INPUT not supported by default)
 
-**5. Check dongle (`rem ** sp [number]` / `!blitz sp [number]`)**
+**5. Check dongle** (`rem ** sp [number]` / `!blitz sp [number]`)
 - Verifies presence of copy protection dongle
 - *number* = dongle ID  
 - Program terminates if dongle not detected
 
-**6. No extension listing (`rem ** ne` / `!blitz ne`)**
+**6. No extension listing** (`rem ** ne` / `!blitz ne`)
 - Prevents program source listing (if supported by Blitz! version)  
 - Used for copy-protection
 
