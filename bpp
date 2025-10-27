@@ -1,20 +1,54 @@
 #!/usr/bin/env ruby
 # coding: utf-8
 
+# BPP+ v1.0.4
+#
+# BPP+ is a BASIC v2 (Commodore 64) preprocessor designed for use with Petcat and tailored
+# for the C*Base Larry Mod v3.1 - Build system. This updated version of the original
+# symbolic preprocessor makes CBM BASIC programs easier to write and read.
+#
+# It supports cross-development of CBM BASIC programs by removing the need for line numbers
+# and enabling the use of labels, scopes, and include directives.
+#
+# The preprocessed output can then be converted into a PRG file using the Petcat utility
+# included with VICE.
+#
+# The original BPP repository can be found [here](https://github.com/hbekel/bpp).
+
 require 'pathname'
 require 'optparse'
 
 # ---------------------------------------------------------------------------------------------
+# Color Module
+# ---------------------------------------------------------------------------------------------
+module Color
+  GREEN  = "\e[32m"
+  CYAN   = "\e[36m"
+  YELLOW = "\e[33m"
+  GRAY   = "\e[90m"
+  RESET  = "\e[0m"
+end
 
+# ---------------------------------------------------------------------------------------------
+# Error Handling
+# ---------------------------------------------------------------------------------------------
+
+# Prints error message to stderr and exits with status 1
+#
+# @param line [Integer] Source line number where error occurred
+# @param message [String] Error message to display
 def error(line, message)
   STDERR.puts "error: line %d: %s" % [line, message]
   exit 1
 end
 
 # ---------------------------------------------------------------------------------------------
+# String Extensions
+# ---------------------------------------------------------------------------------------------
 
 class String
 
+  # BASIC keywords that cannot be used as label identifiers
   @@keywords = "end for next data input# input dim read let goto run if
                 restore gosub return rem stop on wait load save verify def
                 poke print# print cont list clr cmd sys open close get get# new
@@ -22,6 +56,7 @@ class String
                 int abs usr fre pos sqr rnd log exp cos sin tan atn peek
                 len str$ val asc chr$ left$ right$ mid$ ti$ ti st go ~".split(/\s+/)
 
+  # Commodore 64 control characters and special sequences
   @@controls = ["\\$00", "\\$01", "\\$02", "\\$03", "\\$04",
     "\\$05", "\\$06", "\\$07", "\\$08", "\\$09", "\\$0a", "\\$0b",
     "\\$0c", "\\$0d", "\\$0e", "\\$0f", "\\$10", "\\$11", "\\$12",
@@ -103,36 +138,64 @@ class String
     "GREY\\ 2", "LIG\\.GREEN", "LIG\\.BLUE", "GREY\\ 3", "PURPLE",
     "LEFT", "YELLOW", "CYAN"]
 
+  # Custom build controls
   @@buildControls = ["buildstamp"]
 
+  # Generates regex pattern for control sequences
+  #
+  # @param open [String] Opening delimiter
+  # @param close [String] Closing delimiter
+  # @return [Regexp] Pattern matching control sequences
   def self.controls(open, close)
     combinedControls = @@controls + @@buildControls
     /#{Regexp.quote(open)}((\d+\s+)?(#{combinedControls.join('|')}))#{Regexp.quote(close)}/i
   end
 
+  # Regex patterns for escaped and unescaped control sequences
   @@unescaped = self.controls('{', '}')
   @@escaped = self.controls('~', '~')
 
+  # Checks if string is a valid label identifier
+  # Must not be a BASIC keyword
+  #
+  # @return [Boolean] true if valid label, false otherwise
   def label?
-    self =~ /^[a-zA-Z_][\w-]*$/ && !keyword?
+    !keyword?
   end
 
+  # Checks if string is a BASIC keyword
+  #
+  # @return [Boolean] true if keyword, false otherwise
   def keyword?
     @@keywords.include?(self)
   end
 
+  # Checks if string contains hyphens
+  #
+  # @return [Boolean] true if contains hyphen, false otherwise
+  def has_hyphen?
+    self.include?('-')
+  end
+
+  # Escapes control sequences by wrapping in ~ delimiters
   def escape!
     gsub! @@unescaped, "~\\1~"
   end
 
+  # Unescapes control sequences by wrapping in { delimiters
   def unescape!
     gsub! @@escaped, "{\\1}"
   end
 end
 
 # ---------------------------------------------------------------------------------------------
+# IO Extensions
+# ---------------------------------------------------------------------------------------------
 
 class IO
+  # Yields each line with its line number
+  #
+  # @yield [String, Integer] line content and line number
   def each_line_with_number(&block)
     number = 0
     each_line do |line|
@@ -142,28 +205,45 @@ class IO
 end
 
 # ---------------------------------------------------------------------------------------------
+# Node Module - Tree Structure Support
+# ---------------------------------------------------------------------------------------------
 
 module Node
   include Enumerable
 
   attr_writer :parent
 
+  # Checks if node is root (has no parent)
+  #
+  # @return [Boolean] true if root node
   def root?
     parent.nil?
   end
 
+  # Checks if node is leaf (has no children)
+  #
+  # @return [Boolean] true if leaf node
   def leaf?
     children.count == 0
   end
 
+  # Gets parent node
+  #
+  # @return [Node, nil] parent node or nil if root
   def parent
     @parent ||= nil
   end
 
+  # Gets child nodes
+  #
+  # @return [Array] array of child nodes
   def children
     @children ||= []
   end
 
+  # Adds child node(s) to this node
+  #
+  # @param child [Node, Array<Node>] child node(s) to add
   def addChild(child)
     @children ||= []
     child = [child].flatten
@@ -172,6 +252,10 @@ module Node
     child.each { |c| c.parent = self }
   end
 
+  # Removes child node from this node
+  #
+  # @param child [Node] child node to remove
+  # @return [Node, nil] removed child or nil if not found
   def removeChild(child)
     if children.include? child
       children.delete(child)
@@ -180,11 +264,19 @@ module Node
     end
   end
 
+  # Adds child using << operator
+  #
+  # @param child [Node] child node to add
+  # @return [Node] the added child
   def <<(child)
     addChild(child)
     child
   end
 
+  # Gets next sibling of specified class
+  #
+  # @param clazz [Class] class to match (default: Node)
+  # @return [Node, nil] next sibling or nil if none found
   def next_sibling(clazz=Node)
     node = nil
 
@@ -206,10 +298,18 @@ module Node
     return node
   end
 
+  # Checks if next sibling exists
+  #
+  # @param clazz [Class] class to match (default: Node)
+  # @return [Boolean] true if next sibling exists
   def next_sibling?(clazz=Node)
     not next_sibling(clazz).nil?
   end
 
+  # Iterates through children and grandchildren of specified class
+  #
+  # @param clazz [Class] class to match (default: Node)
+  # @yield [Node] each matching node
   def each(clazz=Node, &block)
     children.each do |child|
       yield child if child.is_a? clazz
@@ -221,17 +321,42 @@ module Node
 end
 
 # ---------------------------------------------------------------------------------------------
+# Label - Represents a label definition
+# ---------------------------------------------------------------------------------------------
 
 class Label
   include Node
 
   attr_reader :name, :source
 
+  # Creates a new label
+  #
+  # @param name [String] label name
+  # @param source [Integer] source line number
   def initialize(name, source=0)
     @name = name
     @source = source
   end
 
+  # Validates that label doesn't contain hyphens
+  # Raises error if hyphens are found in label name or full path
+  def validate_no_hyphens!
+    # Check the label name itself
+    if @name.has_hyphen?
+      error(@source, "hyphens not allowed in labels: '#{@name}'")
+    end
+    
+    # Check the full path (handles nested labels like label-1.label-2)
+    full_path = path
+    if full_path.has_hyphen?
+      error(@source, "hyphens not allowed in labels: '#{full_path}'")
+    end
+  end
+
+  # Gets full path to this label from root or specified scope
+  #
+  # @param scope [Node] scope to calculate path from (default: parent)
+  # @return [String] dot-separated path to label
   def path(scope=parent)
     p = parent
     n = name
@@ -243,31 +368,40 @@ class Label
     return n
   end
 
+  # @return [String] label name
   def to_s
     @name
   end
 end
 
 # ---------------------------------------------------------------------------------------------
+# Code - Represents BASIC code
+# ---------------------------------------------------------------------------------------------
 
 class Code < String
   include Node
 
+  # @return [String] code with whitespace removed
   def to_s
     gsub(/\s+/, "")
   end
 end
 
 # ---------------------------------------------------------------------------------------------
+# Literal - Represents a string literal
+# ---------------------------------------------------------------------------------------------
 
 class Literal < String
   include Node
 
+  # @return [String] quoted string literal
   def to_s
     '"%s"' % [self]
   end
 end
 
+# ---------------------------------------------------------------------------------------------
+# Reference - Represents a label reference
 # ---------------------------------------------------------------------------------------------
 
 class Reference
@@ -275,11 +409,16 @@ class Reference
 
   attr_reader :name
 
+  # Creates a new label reference
+  #
+  # @param name [String] referenced label name
   def initialize(name)
     @name = name
   end
 end
 
+# ---------------------------------------------------------------------------------------------
+# Line - Represents a line of BASIC code
 # ---------------------------------------------------------------------------------------------
 
 class Line
@@ -287,11 +426,17 @@ class Line
 
   attr_accessor :source, :file
 
-  @@number = 0    # change: basic lines start at 1 instead of 0
+  # Line number counter (starts at 0, increments to 1 for first line)
+  @@number = 0
 
   attr_reader :number, :text
 
-  def initialize(text, source=0, file="stdin")    # fixme: add source file?
+  # Creates a new BASIC line
+  #
+  # @param text [String] line text
+  # @param source [Integer] source line number
+  # @param file [String] source filename
+  def initialize(text, source=0, file="stdin")
     @text = text
     @file = file
     @source = source
@@ -299,22 +444,28 @@ class Line
     cleanup
   end
 
+  # Sets parent and assigns line number
+  #
+  # @param node [Node] parent node
   def parent=(node)
     super(node)
     @number = @@number+=1
   end
 
+  # Parses line text into Code, Literal, and Reference nodes
   def parse
     @text.unescape!
 
     until @text.empty?
 
-      if (match = /^["](?<string>[^"]*)["]/.match(@text))    # bugfix: allow empty quoted strings
+      # String literal - allow empty quoted strings
+      if (match = /^["](?<string>[^"]*)["]/.match(@text))
         self << Literal.new(match["string"])
         @text = match.post_match.strip
 
-      # elsif (match = /^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)+/    (Original Larry bugfix version)
-      elsif (match = /^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)/    # bugfix: prevent bare THEN in IF...THEN from being misparsed
+      # GOTO/GOSUB with label references
+      # Note: Fixed regex to prevent bare THEN in IF...THEN from being misparsed
+      elsif (match = /^(?<code>go(sub|to))\s*(?<labels>[\w\s,.]+)/
         .match(@text))
 
         self << Code.new(match["code"])
@@ -331,10 +482,12 @@ class Line
         end
         @text = match.post_match.strip
 
-      elsif (match = /^(?<separator>:)/.match(@text))    # bugfix: problem with ::
+      # Statement separator - handle single colon only (fixes :: problem)
+      elsif (match = /^(?<separator>:)/.match(@text))
         self << Code.new(":")
         @text = match.post_match.strip
 
+      # Regular code (not string or colon)
       elsif (match = /^(?<code>[^":]+?(?!then|go(to|sub)))/.match(@text))
         break if match["code"] =~ /\s*rem\s*/
 
@@ -344,6 +497,7 @@ class Line
     end
   end
 
+  # Removes trailing colon if present
   def cleanup
     last = children.last
     return unless last.is_a? Code
@@ -351,6 +505,9 @@ class Line
     children.pop if last == ":"
   end
 
+  # Converts line to BASIC format with line number
+  #
+  # @return [String] formatted BASIC line
   def to_s
     s = "%d " % [number]
 
@@ -370,24 +527,36 @@ class Line
 end
 
 # ---------------------------------------------------------------------------------------------
+# Scope - Represents a code scope
+# ---------------------------------------------------------------------------------------------
 
 class Scope 
   include Node
 
   attr_reader :name
 
+  # Creates a new scope
+  #
+  # @param name [String, nil] scope name
   def initialize(name=nil)
     @name = name.to_s
   end
 
+  # Checks if label is defined in this scope
+  #
+  # @param label [Label] label to check
+  # @return [Boolean] true if label is defined
   def defined?(label)
     children.each do |child|
       next unless child.is_a? Label
-      return true if child.name == label.name
+      return true if child.name.downcase == label.name.downcase
     end
     false
   end
 
+  # Gets full path to this scope
+  #
+  # @return [String] dot-separated path
   def path
     n = name
     p = parent
@@ -400,12 +569,17 @@ class Scope
     return n
   end
 
+  # Resolves label reference to line number
+  #
+  # @param reference [Reference] label reference to resolve
+  # @return [Integer] line number
+  # @raise [RuntimeError] if label cannot be resolved
   def resolve(reference)
 
     children.each do |label|
       next unless label.is_a? Label
 
-      if label.name == reference.name || label.path(parent) == reference.name
+      if label.name.downcase == reference.name.downcase || label.path(parent).downcase == reference.name.downcase
 
         if label.next_sibling?(Line)
           return label.next_sibling(Line).number
@@ -417,7 +591,7 @@ class Scope
 
     each(Scope) do |scope|
       scope.each(Label) do |label|
-        if label.path(self) == reference.name || label.path(parent) == reference.name
+        if label.path(self).downcase == reference.name.downcase || label.path(parent).downcase == reference.name.downcase
 
           if label.next_sibling?(Line)
             return label.next_sibling(Line).number
@@ -431,6 +605,7 @@ class Scope
     return parent.resolve(reference)
   end
 
+  # @return [String] scope description
   def to_s
     return "global scope" if root?
     return "scope '#{path}'"
@@ -438,50 +613,62 @@ class Scope
 end
 
 # ---------------------------------------------------------------------------------------------
+# Parser - Parses BPP source files
+# ---------------------------------------------------------------------------------------------
 
 class Parser
+  # Parses a file by path
+  #
+  # @param path [String, Pathname] file path
+  # @param scope [Scope] parent scope
+  # @return [Scope] parsed scope tree
   def self.parse_file(path, scope = Scope.new)
     pathname = Pathname.new(path).expand_path
+    
+    unless pathname.exist?
+      error(0, "file not found: '#{pathname}'")
+    end
+
+    unless pathname.file?
+      error(0, "not a file: '#{pathname}'")
+    end
+
     File.open(pathname, "r") do |io|
       Parser.new(io, pathname, scope).parse
     end
   end
 
+  # Creates a new parser
+  #
+  # @param io [IO] input stream
+  # @param file [String, Pathname] source filename
+  # @param scope [Scope] parent scope
   def initialize(io = STDIN, file = Pathname.new("stdin"), scope = Scope.new)
     @io = io
     @file = Pathname.new(file).expand_path
     @scope = scope
   end
 
-  # Include method
+  # Includes external file (source or data)
+  #
+  # @param type [String] include type ("source" or "data")
+  # @param path [String] file path
+  # @param source [Integer] source line number for error reporting
   def include(type, path, source)
     pathname = Pathname.new(path)
-    tried_paths = []
 
+    # Resolve relative paths relative to the including file
     unless pathname.absolute?
       if @file && @file.to_s != "stdin"
-        # Relative to including file
         pathname = @file.dirname.join(path)
-        tried_paths << pathname.expand_path.to_s
-      end
-
-      # Also try current working directory
-      pathname_cwd = Pathname.pwd.join(path)
-      tried_paths << pathname_cwd.expand_path.to_s unless tried_paths.include?(pathname_cwd.expand_path.to_s)
-
-      if pathname.exist?
-        pathname = pathname.expand_path
-      elsif pathname_cwd.exist?
-        pathname = pathname_cwd.expand_path
-      else
-        error(
-          source,
-          "include: no such file or directory: '#{path}'\n  tried:\n  - #{tried_paths.join("\n  - ")}"
-        )
       end
     end
 
-    pathname = pathname.expand_path unless pathname.exist?
+    pathname = pathname.expand_path
+
+    unless pathname.exist?
+      error(source, "include: file not found: '#{path}'")
+    end
 
     case type
     when "source"
@@ -493,11 +680,21 @@ class Parser
     end
   end
 
+  # Includes source file
+  #
+  # @param pathname [Pathname] file path
   def include_source(pathname)
     Parser.parse_file(pathname, @scope)
   end
 
+  # Includes binary data file as DATA statements
+  #
+  # @param pathname [Pathname] file path
   def include_data(pathname)
+    unless pathname.exist?
+      error(0, "data file not found: '#{pathname}'")
+    end
+
     input = pathname.open("rb")
     i = 0
     line = "data "
@@ -517,6 +714,9 @@ class Parser
     input.close
   end
 
+  # Parses input stream
+  #
+  # @return [Scope] parsed scope tree
   def parse
     buffer = ""
 
@@ -547,24 +747,76 @@ class Parser
       end
 
       next if line.empty?
-      next if line =~ /^rem/
+      # Skip regular REM comments but preserve special Blitz directives (rem ** ...)
+      next if line =~ /^rem(?!\s*\*\*)/i
       next if line =~ /^;/
 
+      # Handle !include directive
       if line =~ /^!include\s+(.+?)\s+"(.+?)"/
         match = $&
         include($1, $2, source)
         line.sub!(match, '')
         redo
 
-      elsif line =~ /^([a-zA-Z_][\w-]*):/ && $1.label?
-        label = Label.new($1, source)
+      # Handle !blitz directive - converts to rem ** format
+      elsif line =~ /^!blitz\s+(.+)/
+      blitz_cmd = $1
+      @scope << Line.new("rem ** #{blitz_cmd}", source, @file)
+      line.sub!(/^!blitz\s+.+/, '')
+      redo
+
+      # Label definition matching
+      # 
+      # Labels must appear at the start of a line and are followed by a colon.
+      # The ^ anchor ensures we only match at line start (or after previous label removal).
+      #
+      # Strategy: Capture identifiers that could be labels (valid or invalid)
+      # Pattern: [a-zA-Z_0-9][\w$£@#%&!*+<>?/-]*
+      # - Starts with letter, underscore, or digit (we'll validate the start separately)
+      # - Can contain word chars plus common special chars someone might use
+      # - Excludes: = ( ) [ ] { } " ' , ; (space) which indicate BASIC code
+      #
+      # The key insight: At the start of a line, if we see identifier-like chars followed by :,
+      # it's likely meant to be a label. We capture it and validate it.
+      #
+      # Guard: !match[1].keyword? - Don't treat BASIC keywords as labels
+      #
+      elsif (match = line.match(/^([\w$£@#%&!*+<>?\/-]+):/)) && (!match[1].keyword?)
+        label_name = match[1]
+        
+        # Safety check
+        if label_name.nil? || label_name.empty?
+          error(source, "invalid label syntax")
+        end
+        
+        # Validate: Cannot start with a number
+        if label_name =~ /^[0-9]/
+          error(source, "label cannot start with a number: '#{label_name}'")
+        end
+        
+        # Validate: Cannot start with a special character (must start with letter or underscore)
+        if label_name =~ /^[^a-zA-Z_]/
+          error(source, "label must start with a letter or underscore: '#{label_name}'")
+        end
+        
+        # Validate: Cannot contain hyphens
+        if label_name =~ /-/
+          error(source, "hyphens not allowed in labels: '#{label_name}'")
+        end
+        
+        # Validate: Can only contain letters, digits, underscores (check for any other chars)
+        if label_name =~ /[^\w]/
+          error(source, "special characters not allowed in labels: '#{label_name}'")
+        end
+        
+        label = Label.new(label_name, source)
 
         if @scope.defined?(label)
           error(source, "label '%s' already defined in %s" % [label, @scope])
         end
 
         @scope << label
-        line.sub!(/^([a-zA-Z_][\w-]*):/, '')
+        line.sub!(/^([\w$@#%&!*+<>?\/-]+):/, '')
         redo
 
       elsif line =~ /^{/
@@ -578,71 +830,163 @@ class Parser
         redo
 
       elsif line =~ /}$/
+        if @scope.root?
+          error(source, "unexpected '}' - no scope to close")
+        end
         @scope = @scope.parent
         line.sub!(/}$/, '')
         redo
       end
     end
 
-    @io.close
+    @io.close unless @io == STDIN
     @scope
   end
 end
 
 # ---------------------------------------------------------------------------------------------
+# Preprocessor - Main preprocessor class
+# ---------------------------------------------------------------------------------------------
 
 class Preprocessor
+  # Creates a new preprocessor
+  #
+  # @param input [IO, nil] input stream (nil for file-based input)
+  # @param filename [String] source filename
+  # @param output [IO] output stream
   def initialize(input=STDIN, filename="stdin", output=STDOUT)
     @input = input
     @filename = filename
     @output = output
   end
 
+  # Processes input and builds syntax tree
   def process()
     if @filename == "stdin"
       @tree = Parser.new(@input, @filename, Scope.new("global")).parse
     else
       @tree = Parser.parse_file(@filename, Scope.new("global"))
     end
+  rescue Errno::ENOENT => e
+    error(0, "file not found: #{e.message}")
+  rescue Errno::EACCES => e
+    error(0, "permission denied: #{e.message}")
+  rescue StandardError => e
+    STDERR.puts "unexpected error: #{e.message}"
+    STDERR.puts e.backtrace.join("\n")
+    exit 1
   end
 
+  # Looks up source location for a BASIC line number
+  #
+  # @param num [Integer] BASIC line number
   def lookup(num)
     @tree.each(Line) do |line|
       if line.number == num
-        puts "%s, line %s" % [line.file, line.source]
-        break
+        puts "BASIC line #{num} corresponds to:"
+        puts "  Source file: #{line.file}"
+        puts "  Source line: #{line.source}"
+        return
       end
     end
+    puts "BASIC line #{num} not found in compiled output"
   end
 
+  # Outputs processed BASIC code
   def put()
     @tree.each(Line) { |line| puts line }
   end
 end
 
-# --- Main entrypoint -------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+# Main Entry Point
+# ---------------------------------------------------------------------------------------------
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: bpp [options] file.bpp"
+if __FILE__ == $PROGRAM_NAME
+  options = {}
+  
+  OptionParser.new do |opts|
+    opts.on("-l", "--line LINE", Integer, "Lookup source location for BASIC line number") do |l|
+      options[:line] = l
+    end
 
-  opts.on("-lLINE", "--line=LINE", "Lookup line") do |l|
-    options[:line] = l
+    opts.on("-h", "--help", "Show this help message") do
+      puts ""
+      puts "    #{Color::GREEN}Usage:#{Color::RESET} bpp [options] [file.bpp]"
+      puts "           or cat file.bpp | bpp [options]"
+      puts ""
+      puts "    #{Color::CYAN}Description:#{Color::RESET}"
+      puts "      A Commodore 64 BASIC v2 preprocessor for use with Petcat. Translates"
+      puts "      labeled BASIC source into numbered line format for compilation and"
+      puts "      execution."
+      puts ""
+      puts "      See README.md for details on BPP+ functions and features"
+      puts "      specifically tailored for C*Base Larry Mod v3.1"
+      puts ""
+      puts "    #{Color::CYAN}Options:#{Color::RESET}"
+      puts "      -l, #{Color::GRAY}--line LINE#{Color::RESET}    Lookup source file location for a BASIC line number."
+      puts "                         Use this when debugging: if your program crashes with"
+      puts "                         'ERROR IN 47', run 'bpp -l 47 file.bpp' to find which"
+      puts "                         line in your source .bpp file corresponds to line 47"
+      puts "                         in the compiled output."
+      puts ""
+      puts "      -h, #{Color::GRAY}--help#{Color::RESET}         Show this help message"
+      puts "      -v, #{Color::GRAY}--version#{Color::RESET}      Show version information"
+      puts ""
+      puts "    #{Color::CYAN}Examples:#{Color::RESET}"
+      puts "      bpp input.bpp                        #{Color::GRAY}# Process file to stdout#{Color::RESET}"
+      puts "      bpp input.bpp > output.bas           #{Color::GRAY}# Save to file#{Color::RESET}"
+      puts "      bpp input.bpp | sed 's/x/y/' > out   #{Color::GRAY}# Pipe through other tools#{Color::RESET}"
+      puts ""
+      puts "    #{Color::CYAN}Debugging:#{Color::RESET}"
+      puts "      bpp -l 47 input.bpp                  #{Color::GRAY}# Output: output.bpp, line 23#{Color::RESET}"
+      puts ""
+      exit
+    end
+
+    opts.on("-v", "--version", "Show version") do
+      puts ""
+      puts "    #{Color::CYAN}BPP+#{Color::RESET} v1.0.4"
+      puts "    #{Color::GRAY}A Commodore 64 BASIC v2 preprocessor for use with Petcat#{Color::RESET}"
+      puts ""
+      puts "    #{Color::CYAN}This version is based on:#{Color::RESET}"
+      puts "      bpp basic preprocessor"
+      puts "      Copyright (c) 2015, Henning Bekel <h.bekel@googlemail.com>"
+      puts "      All rights reserved."
+      puts ""
+      exit
+    end
+  end.parse!
+
+  filename = ARGV.shift
+
+  # Show brief usage if no input provided (not reading from pipe)
+  if filename.nil? && STDIN.tty?
+    puts ""
+    puts "    #{Color::GREEN}Usage:#{Color::RESET} bpp [options] [file.bpp]"
+    puts "           or cat file.bpp | bpp [options]"
+    puts ""
+    puts "    #{Color::GRAY}Try 'bpp -h or --help' for more information."
+    puts ""
+    exit 0
   end
-end.parse!
 
-filename = ARGV.shift
+  begin
+    pp = if filename
+           Preprocessor.new(nil, filename)
+         else
+           Preprocessor.new
+         end
 
-if filename
-  pp = Preprocessor.new(nil, filename)
-else
-  pp = Preprocessor.new
-end
+    pp.process
 
-pp.process
-
-if options.has_key? :line
-  pp.lookup(options[:line].to_i)
-else
-  pp.put
+    if options.key?(:line)
+      pp.lookup(options[:line])
+    else
+      pp.put
+    end
+  rescue Interrupt
+    STDERR.puts "\nInterrupted"
+    exit 130
+  end
 end
