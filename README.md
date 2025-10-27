@@ -36,7 +36,7 @@ screen: {
   - [Control flow](#control-flow)
   - [Statement chaining](#statement-chaining)
   - [Include directives](#include-directives)
-  - [Blitz BASIC compiler directives](#blitz-compiler-directives)
+  - [Blitz! BASIC compiler directives](#blitz-basic-compiler-directives)
 - [Symbol resolution algorithm](#symbol-resolution-algorithm)
 - [Static analysis & validation](#static-analysis--validation)
 - [Debugging & diagnostics](#debugging--diagnostics)
@@ -599,7 +599,7 @@ BPP+ tracks include stack to detect circular dependencies (though not explicitly
 
 ---
 
-### Blitz BASIC compiler directives
+### Blitz! BASIC compiler directives
 
 BPP+ provides full compatibility with the Blitz! BASIC compiler through special directives and syntax extensions. These directives control runtime behavior and compiler optimizations.
 Blitz! was also released under other names, such as **AustroComp**, but is essentially the same program. The version [used in combination with](https://csdb.dk/release/?id=173267) BPP+ and the **C\*Base Larry Mod v3.1 development package** is written by **Daniel Kahlin**.
