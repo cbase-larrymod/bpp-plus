@@ -26,18 +26,6 @@ screen: {
 
 Complete documentation is available in the **[GitHub Wiki](https://github.com/cbase-larrymod/wiki)**:
 
-- **[Installation](https://github.com/cbase-larrymod/wiki/Installation)** - Prerequisites and setup
-- **[Compilation Pipeline](https://github.com/cbase-larrymod/wiki/Compilation-Pipeline)** - Build process and workflows
-- **[Language Specification](https://github.com/cbase-larrymod/wiki/Language-Specification)** - Complete syntax reference
-- **[Symbol Resolution Algorithm](https://github.com/cbase-larrymod/wiki/Symbol-Resolution-Algorithm)** - How labels and scopes work
-- **[Static Analysis & Validation](https://github.com/cbase-larrymod/wiki/Static-Analysis-and-Validation)** - Error checking
-- **[Debugging & Diagnostics](https://github.com/cbase-larrymod/wiki/Debugging-and-Diagnostics)** - Troubleshooting tools
-- **[Build Integration](https://github.com/cbase-larrymod/wiki/Build-Integration)** - Makefiles and automation
-- **[Error Handling](https://github.com/cbase-larrymod/wiki/Error-Handling)** - Error types and recovery
-- **[API Reference](https://github.com/cbase-larrymod/wiki/API-Reference)** - Command-line interface
-- **[Contributing](https://github.com/cbase-larrymod/wiki/Contributing)** - How to contribute
-- **[Version History](https://github.com/cbase-larrymod/wiki/Version-History)** - Changelog
-
 ## Quick start
 
 ```bash
