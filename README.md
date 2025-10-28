@@ -24,7 +24,7 @@ screen: {
 
 ## Documentation
 
-Complete documentation is available in the **[GitHub Wiki](https://github.com/cbase-larrymod/wiki)**:
+Complete documentation is available in the **[GitHub Wiki](https://github.com/cbase-larrymod/bpp-plus/wiki)**:
 
 ## Quick start
 
@@ -40,7 +40,7 @@ petcat -w2 -o program.prg -- output.bas
 x64 program.prg
 ```
 
-See the **[Installation](https://github.com/cbase-larrymod/wiki/Installation)** wiki page for detailed setup instructions.
+See the **[Installation](https://github.com/cbase-larrymod/bpp-plus/wiki/Installation)** wiki page for detailed setup instructions.
 
 ## Contributing
 
