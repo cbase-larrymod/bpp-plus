@@ -46,8 +46,6 @@ See the **[Installation](https://github.com/cbase-larrymod/bpp-plus/wiki/Install
 
 Issues and pull requests are welcome. Please maintain consistency with existing patterns when adding new features.
 
----
-
 ## Version history
 
 ### 1.0.4 (Current)
@@ -70,8 +68,6 @@ Issues and pull requests are welcome. Please maintain consistency with existing 
 
 See [CHANGELOG.md](CHANGELOG.md) for complete history.
 
----
-
 ## References
 
 ### Technical documentation
@@ -83,13 +79,9 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history.
 **Petcat Documentation:**
 - [VICE Manual - Petcat](https://vice-emu.sourceforge.io/vice_16.html)
 
----
-
 ## License
 
 See [LICENSE](LICENSE) file for details.
-
----
 
 ## Repository
 
