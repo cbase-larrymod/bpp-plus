@@ -1,30 +1,48 @@
-# BPP+ - BASIC v2 Preprocessor & Transpiler
+# BPP+ Preprocessor
 
 **Modern toolchain for Commodore 64 BASIC v2 cross-development**
 
-BPP+ is a source-to-source compiler that transpiles enhanced BASIC syntax into standard Commodore BASIC v2 bytecode. It implements a symbolic assembler-style workflow for BASIC development, providing label-based control flow, lexical scoping, modular compilation, and comprehensive static analysis. Extended from the [original BPP preprocessor](https://github.com/hbekel/bpp).
+BPP+ is a source-to-source compiler that transpiles enhanced BASIC syntax into standard Commodore BASIC v2. It provides label-based control flow, lexical scoping, modular compilation, and comprehensive static analysis.
+
+Extended from the [original BPP preprocessor](https://github.com/hbekel/bpp) by Henning Liebenau.
 
 Part of the **C\*Base Larry Mod v3.1** development package.
 
+## Quick Example
+
+**Source** - Enhanced syntax with labels, scopes and statement chaining (`.bpp`)
+
 ```basic
-; Source (.bpp) - Enhanced syntax with labels and scopes
 main:
     gosub screen.init
-    gosub game.loop
+    gosub screen.welcome
 
 screen: {
-    init: poke 53280,0: poke 53281,0: return
+    init:
+        poke 53280,0\
+        poke 53281,0\
+        return
 }
 
-; Target (.bas) - Standard BASIC v2 with line numbers
-1 gosub2
-2 gosub3
+screen: {
+    welcome:
+        print "hello bpp+"\
+        return
+}
+```
+
+**Target** - Standard BASIC v2 with line numbers (`.bas`)
+
+```basic
+1 gosub3
+2 gosub4
 3 poke53280,0:poke53281,0:return
+4 print"hello bpp+":return
 ```
 
 ## Documentation
 
-Complete documentation is available in the **[GitHub Wiki](https://github.com/cbase-larrymod/bpp-plus/wiki)**:
+Complete documentation is available on **[C*Base Reference Guide - BPP+ Preprocessor](https://cbasereferenceguide.github.io/development/bpp-plus-preprocessor)**
 
 ## Quick start
 
@@ -40,7 +58,7 @@ petcat -w2 -o program.prg -- output.bas
 x64 program.prg
 ```
 
-See the **[Installation](https://github.com/cbase-larrymod/bpp-plus/wiki/Installation)** wiki page for detailed setup instructions.
+See the **[Installation](https://cbasereferenceguide.github.io/development/bpp-plus-preprocessor/getting-started/installation/)** page for detailed setup instructions.
 
 ## Contributing
 
@@ -48,23 +66,35 @@ Issues and pull requests are welcome. Please maintain consistency with existing 
 
 ## Version history
 
-### 1.0.4 (Current)
-- **Added:** Full Blitz! compiler compatibility
-- **Added:** `rem **` and `!blitz` directive syntax
+### [1.0.5] - 2025-11-19 (Current)
+#### Added
 
-### 1.0.3
-- **Added:** Comprehensive error handling and validation
-- **Added:** Command-line debugging with `-l` flag
-- **Added:** Enhanced static analysis for label validation
-- **Improved:** Error messages with context and file information
-- **Improved:** Documentation with Blitz! integration guide
-- **Fixed:** Edge cases in scope resolution
-- **Documentation:** Complete technical specification
+##### Build Placeholder Enhancements
 
-### 1.0.2
-- **Added:** Statement chaining with `\` continuation operator
-- **Improved:** Source code readability features
-- **Fixed:** Line number mapping for multi-statement lines
+- **New build placeholders** for flexible timestamping
+  - `{builddate}` - Current date in YYYY-MM-DD format
+  - `{buildtime}` - Current time in HH:MM format
+  - Complements existing `{buildstamp}` for more granular control
+
+##### Documentation
+
+- **C\*Base Reference Guide** integration
+  - Complete documentation now in `docs/manual.md`
+  - Mirrors C\*Base Reference Guide
+  - Comprehensive examples and usage patterns
+  - Installation and compilation instructions
+
+#### Changed
+
+- **`{buildstamp}` format updated**
+  - Now includes both date and time in YYYY-MM-DD HH:MM format
+  - Consistent timestamp format across all build modes
+
+- **Help message improvements**
+  - Updated `--help` / `-h` output for clarity
+
+- **Documentation restructuring**
+  - Primary documentation moved from GitHub Wiki to C\*Base Reference Guide
 
 See [CHANGELOG.md](CHANGELOG.md) for complete history.
 

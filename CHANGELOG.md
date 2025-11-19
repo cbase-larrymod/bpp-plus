@@ -2,7 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
----
+## [1.0.5] - 2025-11-19
+
+### Added
+
+#### Build Placeholder Enhancements
+- **New build placeholders** for flexible timestamping
+  - `{builddate}` - Current date in YYYY-MM-DD format
+  - `{buildtime}` - Current time in HH:MM format
+  - Complements existing `{buildstamp}` for more granular control
+
+  **Examples:**
+  ```basic
+  print "Build Date: {builddate}"
+  print "Build Time: {buildtime}"
+  
+  ; Output:
+  Build Date: 2025-11-18
+  Build Time: 14:30
+  ```
+
+#### Documentation
+- **C\*Base Reference Guide** integration
+  - Complete documentation now in `docs/manual.md`
+  - Mirrors C\*Base Reference Guide
+  - Comprehensive examples and usage patterns
+  - Installation and compilation instructions
+
+### Changed
+
+- **`{buildstamp}` format updated**
+  - Now includes both date and time in YYYY-MM-DD HH:MM format
+  - Consistent timestamp format across all build modes
+
+- **Help message improvements**
+  - Updated `--help` / `-h` output for clarity
+
+- **Documentation restructuring**
+  - Primary documentation moved from GitHub Wiki to C\*Base Reference Guide
+
 ## [1.0.4] - 2025-10-27
 
 ### Added
@@ -124,8 +162,6 @@ All notable changes to this project will be documented in this file.
 - **Backward Compatibility:** Maintains all v1.0.2 functionality while adding robustness
 - **Production Ready:** Comprehensive error handling and validation suitable for automated build systems
 
----
-
 ## [1.0.2] - 2025-09-13
 
 ### Added
@@ -152,8 +188,6 @@ All notable changes to this project will be documented in this file.
 - **Constraints:** Cannot chain across scope boundaries or label definitions
 - **Performance:** Single-line execution is faster on C64 than multiple lines
 - **Debugging:** Source line mapping preserved for each statement chain
-
----
 
 ## [1.0.1] - 2025-09-12
 
@@ -260,8 +294,6 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - **Code cleanup** - Removed unwanted spaces and formatting inconsistencies
-
----
 
 ## [1.0.0] - 2025-09-11
 
