@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # coding: utf-8
 
-# BPP+ v1.0.4
+# BPP+ v1.0.5
 #
 # BPP+ is a BASIC v2 (Commodore 64) preprocessor designed for use with Petcat and tailored
 # for the C*Base Larry Mod v3.1 - Build system. This updated version of the original
@@ -139,7 +139,7 @@ class String
     "LEFT", "YELLOW", "CYAN"]
 
   # Custom build controls
-  @@buildControls = ["buildstamp"]
+  @@buildControls = ["buildstamp", "builddate", "buildtime"]
 
   # Generates regex pattern for control sequences
   #
@@ -452,9 +452,29 @@ class Line
     @number = @@number+=1
   end
 
+  # Replaces build tokens with actual date/time values
+  #
+  # Supported tokens:
+  # - {builddate} - replaced with current date in YYYY-MM-DD format
+  # - {buildtime} - replaced with current time in HH:MM format
+  # - {buildstamp} - replaced with date and time in YYYY-MM-DD HH:MM format
+  def replace_build_tokens!
+    now = Time.now
+    
+    # Replace buildstamp (full date and time)
+    @text.gsub!(/\{buildstamp\}/i, now.strftime("%Y-%m-%d %H:%M"))
+    
+    # Replace builddate (date only)
+    @text.gsub!(/\{builddate\}/i, now.strftime("%Y-%m-%d"))
+    
+    # Replace buildtime (time only)
+    @text.gsub!(/\{buildtime\}/i, now.strftime("%H:%M"))
+  end
+
   # Parses line text into Code, Literal, and Reference nodes
   def parse
     @text.unescape!
+    replace_build_tokens!
 
     until @text.empty?
 
@@ -916,12 +936,26 @@ if __FILE__ == $PROGRAM_NAME
       puts "           or cat file.bpp | bpp [options]"
       puts ""
       puts "    #{Color::CYAN}Description:#{Color::RESET}"
-      puts "      A Commodore 64 BASIC v2 preprocessor for use with Petcat. Translates"
-      puts "      labeled BASIC source into numbered line format for compilation and"
-      puts "      execution."
+      puts "      A source-to-source compiler for Commodore 64 BASIC v2 cross-development."
+      puts "      Transpiles enhanced BASIC syntax with labels, scopes, and statement chaining"
+      puts "      into standard line-numbered BASIC v2 for execution on C64 hardware/emulators."
       puts ""
-      puts "      See README.md for details on BPP+ functions and features"
-      puts "      specifically tailored for C*Base Larry Mod v3.1"
+      puts "      Part of the C*Base Larry Mod v3.1 development package."
+      puts ""
+      puts "      Features:"
+      puts "        • Label-based control flow (symbolic GOTO/GOSUB)"
+      puts "        • Lexical scoping with hierarchical namespaces"
+      puts "        • Modular compilation via include directives"
+      puts "        • Statement chaining and line continuation"
+      puts "        • Static analysis and symbol validation"
+      puts "        • Full Blitz! compiler directive support"
+      puts "        • Build timestamp tokens ({builddate}, {buildtime})"
+      puts ""
+      puts "      GitHub repository:"
+      puts "        • https://github.com/cbase-larrymod/bpp-plus"
+      puts ""
+      puts "      Documentation:"
+      puts "        • https://cbasereferenceguide.github.io/development/bpp-plus-preprocessor/"
       puts ""
       puts "    #{Color::CYAN}Options:#{Color::RESET}"
       puts "      -l, #{Color::GRAY}--line LINE#{Color::RESET}    Lookup source file location for a BASIC line number."
@@ -946,12 +980,12 @@ if __FILE__ == $PROGRAM_NAME
 
     opts.on("-v", "--version", "Show version") do
       puts ""
-      puts "    #{Color::CYAN}BPP+#{Color::RESET} v1.0.4"
+      puts "    #{Color::CYAN}BPP+#{Color::RESET} v1.0.5"
       puts "    #{Color::GRAY}A Commodore 64 BASIC v2 preprocessor for use with Petcat#{Color::RESET}"
       puts ""
       puts "    #{Color::CYAN}This version is based on:#{Color::RESET}"
       puts "      bpp basic preprocessor"
-      puts "      Copyright (c) 2015, Henning Bekel <h.bekel@googlemail.com>"
+      puts "      Copyright (c) 2015, Henning Liebenau <h.bekel@googlemail.com>"
       puts "      All rights reserved."
       puts ""
       exit
